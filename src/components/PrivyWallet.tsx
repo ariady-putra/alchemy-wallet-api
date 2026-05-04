@@ -16,7 +16,8 @@ export default function PrivyWallet() {
     return <div className="flex flex-col justify-center gap-3 w-1/4 h-dvh mx-auto">
       <button
         className="btn btn-primary"
-        onClick={() => login()}>
+        onClick={() => login()}
+      >
         Login with Privy
       </button>
     </div>;
