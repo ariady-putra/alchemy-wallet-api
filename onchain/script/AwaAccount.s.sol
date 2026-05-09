@@ -25,15 +25,12 @@ contract AwaAccountScript is Script {
         vm.startBroadcast();
 
         account = new AwaAccount();
-        address accountAddress = address(account);
-
         account.initializeAccount(owner, MODULE_TYPE_EXECUTOR, moduleAddress, "");
 
         vm.stopBroadcast();
 
+        address accountAddress = address(account);
         console.log("Account Address:", accountAddress);
-        console.log("Module Address:", moduleAddress);
         // Account Address: 0x13d07734f1dE5dF9D5B7a3C7e0Ab684aDd13fd9B
-        // Module Address: 0xaCCB79680d6a24cda7c3c0F2EdC6AA3C627AEB74
     }
 }

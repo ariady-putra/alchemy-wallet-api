@@ -6,6 +6,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 import {MODULE_TYPE_EXECUTOR} from "@openzeppelin/contracts/interfaces/draft-IERC7579.sol";
 import {
     ERC7579Utils,
+    Execution,
     Mode,
     ModeSelector,
     ModePayload
@@ -33,6 +34,17 @@ contract AwaAccountTest is Test {
     function test_RevertWhen_InvalidInitialization(address signer) public {
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         account.initializeAccount(signer, MODULE_TYPE_EXECUTOR, address(_INIT_MODULE), "");
+    }
+
+    function test_RevertWhen_ERC7579AlreadyInstalledModule() public {
+        address initModule = address(_INIT_MODULE);
+        bytes memory erc7579AlreadyInstalledModule = abi.encodeWithSelector(
+            ERC7579Utils.ERC7579AlreadyInstalledModule.selector, MODULE_TYPE_EXECUTOR, initModule
+        );
+
+        vm.prank(_entryPoint);
+        vm.expectRevert(erc7579AlreadyInstalledModule);
+        account.installModule(MODULE_TYPE_EXECUTOR, initModule, "");
     }
 
     function test_IncrementCount() public {
@@ -73,5 +85,34 @@ contract AwaAccountTest is Test {
 
         vm.prank(address(account));
         assertEq(_INIT_MODULE.getCount(), x);
+    }
+
+    function testFuzz_ExecuteBatch(uint8 count) public {
+        Execution memory incrementCount = Execution({
+            target: address(_INIT_MODULE),
+            value: 0,
+            callData: abi.encodeWithSelector(_INIT_MODULE.incrementCount.selector)
+        });
+
+        Execution[] memory batch = new Execution[](count);
+        for (uint8 a = 0; a < count; a++) {
+            batch[a] = incrementCount;
+        }
+
+        vm.prank(_entryPoint);
+        account.execute(
+            Mode.unwrap(
+                ERC7579Utils.encodeMode(
+                    ERC7579Utils.CALLTYPE_BATCH,
+                    ERC7579Utils.EXECTYPE_DEFAULT,
+                    ModeSelector.wrap(""),
+                    ModePayload.wrap("")
+                )
+            ),
+            ERC7579Utils.encodeBatch(batch)
+        );
+
+        vm.prank(address(account));
+        assertEq(_INIT_MODULE.getCount(), count);
     }
 }
